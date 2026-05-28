@@ -37,11 +37,75 @@ function getLatestSessionTimestamp(session) {
   return latest;
 }
 
+function isSessionEmpty(session) {
+  return getLatestSessionTimestamp(session) === 0;
+}
+
+function shouldAutoSaveSession(session) {
+  return Boolean(session && session.dirty && !isSessionEmpty(session));
+}
+
+function normalizeSavedSession(record) {
+  if (!record) return null;
+  if (record.agents) {
+    return {
+      ...record,
+      dirty: Boolean(record.dirty),
+      lastActiveAgentId: record.lastActiveAgentId || null,
+    };
+  }
+
+  const session = createEmptySession({
+    id: record.id,
+    currentAgentId: record.agentId || null,
+    now: record.savedAt || Date.now(),
+  });
+  session.title = record.title || session.title;
+  session.savedAt = record.savedAt || 0;
+
+  if (record.agentId) {
+    session.agents[record.agentId] = {
+      agentId: record.agentId,
+      agentName: record.agentName || record.agentId.toUpperCase(),
+      messages: Array.isArray(record.messages) ? [...record.messages] : [],
+    };
+  }
+
+  return session;
+}
+
+function migrateLegacyRuntimeChats(chatMap, agents, currentAgentId) {
+  const session = createEmptySession({
+    id: 'sess_' + Date.now(),
+    currentAgentId,
+    now: Date.now(),
+  });
+
+  agents.forEach(agent => {
+    const messages = Array.isArray(chatMap[agent.id]) ? chatMap[agent.id] : [];
+    if (messages.length > 0) {
+      session.agents[agent.id] = {
+        agentId: agent.id,
+        agentName: agent.name,
+        messages: [...messages],
+      };
+    }
+  });
+
+  session.savedAt = getLatestSessionTimestamp(session);
+  session.dirty = session.savedAt > 0;
+  return session;
+}
+
 const api = {
   createEmptySession,
   deriveSessionTitle,
   ensureSessionAgent,
   getLatestSessionTimestamp,
+  isSessionEmpty,
+  shouldAutoSaveSession,
+  normalizeSavedSession,
+  migrateLegacyRuntimeChats,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
