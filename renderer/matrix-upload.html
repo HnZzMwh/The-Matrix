@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com; connect-src 'self' http://localhost:* https: ws: wss:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:; worker-src 'self' blob:; media-src 'self' blob: data:;">
+<title>MATRIX // CONSCIOUSNESS ACCESS PROTOCOL v2.0</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="css/style.css">
+<!-- Electron localStorage → IPC bridge -->
+<script>
+(function(){if(typeof window.electronAPI==='undefined')return;
+var ea=window.electronAPI,km={'matrix_agents_v2':'agents','matrix_sessions_v2':'sessions','matrix_api_config':'api_config','matrix_file_whitelist':'file_whitelist','matrix_face_print':'face_print','matrix_arch_memory':'architecture','matrix_api_profiles':'api_profiles','matrix_token_usage':'token_usage'};
+// Synchronous cache from preload (avoids data loss on reload)
+var cache=(ea.storeCache||{});
+for(var k in km){var v=cache[km[k]];if(v!==undefined)cache[k]=v;}
+// Async refresh to pick up any runtime changes
+ea.store.getAll().then(function(all){for(var k in km){var v=all[km[k]];if(v!==undefined&&!cache.hasOwnProperty(k))cache[k]=v;}for(var ck in all)if(ck.indexOf('chat_')===0&&!cache.hasOwnProperty(ck))cache[ck]=all[ck];});
+var gi=Storage.prototype.getItem,si=Storage.prototype.setItem,ri=Storage.prototype.removeItem;
+Storage.prototype.getItem=function(k){if(cache.hasOwnProperty(k)&&cache[k]!==undefined)return JSON.stringify(cache[k]);return gi.call(this,k);};
+Storage.prototype.setItem=function(k,v){try{cache[k]=JSON.parse(v)}catch(e){cache[k]=v}if(km[k]){try{ea.store.set(km[k],JSON.parse(v))}catch(e){}}else if(k.indexOf('chat_')===0){try{ea.store.setChat(k.slice(5),JSON.parse(v))}catch(e){}}try{si.call(this,k,v)}catch(e){};};
+Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remove(km[k]);else if(k.indexOf('chat_')===0)ea.store.deleteChat(k.slice(5));ri.call(this,k);};
+})();
+</script>
+<style>
+  body { -webkit-user-select:none; user-select:none; }
+  input, textarea, [contenteditable] { -webkit-user-select:text; user-select:text; }
+</style>
+</head>
+<body>
+
+<!-- ── Electron window drag bar (full width) ── -->
+<div id="win-drag-bar" style="position:fixed;top:0;left:0;right:0;height:10px;-webkit-app-region:drag;z-index:9999;pointer-events:auto;display:none;"></div>
+<script>if(window.electronAPI)document.getElementById('win-drag-bar').style.display='block';</script>
+
+<canvas id="rain-canvas"></canvas>
+
+<!-- ===== LOADING / BOOT SCREEN ===== -->
+<div id="loading-screen">
+  <div class="glitch-window" id="win1">
+    <div class="win-header">SYS://CORTEX_BRIDGE_INIT</div>
+    <div class="win-content" id="wc1"></div>
+  </div>
+  <div class="glitch-window" id="win2">
+    <div class="win-header">NET://CONSCIOUSNESS_STREAM</div>
+    <div class="win-content" id="wc2"></div>
+  </div>
+  <div class="glitch-window" id="win3">
+    <div class="win-header">NET://AGENT_ROSTER</div>
+    <div class="win-content" id="wc3"></div>
+  </div>
+  <div class="glitch-window" id="win-horizontal">
+    <div class="win-header">[ ACTIVITY LOG ]</div>
+    <div class="win-content">
+      <div class="h-scroll-line" id="h-scroll"></div>
+    </div>
+  </div>
+  <div id="loading-status-main">
+    <div id="ls-line1" style="opacity:0">HOST ENTERING THE MATRIX</div>
+    <div id="ls-line2" style="opacity:0">INITIALIZING CONSCIOUSNESS</div>
+  </div>
+</div>
+
+<!-- ===== CAMERA / FACE LOCK SCREEN ===== -->
+<div id="upload-screen">
+  <div class="upload-title glitch-text" data-text="FACE LOCK PROTOCOL">FACE LOCK PROTOCOL</div>
+  <div class="upload-subtitle">// BIOMETRIC_AUTH // FEATURE_SCAN // MATRIX_ENTRY //</div>
+
+  <div id="face-scan-container">
+    <div class="fs-hdr">
+      <span class="fs-hdr-title">SYS://BIOMETRIC_ID_v4.1</span>
+      <span class="fs-hdr-status" id="fs-hdr-status"><span class="blink">▌</span> AUTHENTICATING</span>
+    </div>
+    <div class="fs-frame" id="fs-frame">
+      <canvas id="fs-bg"></canvas>
+      <canvas id="fs-main"></canvas>
+      <canvas id="fs-fx"></canvas>
+      <div class="fs-corner tl"></div>
+      <div class="fs-corner tr"></div>
+      <div class="fs-corner bl"></div>
+      <div class="fs-corner br"></div>
+      <div class="fs-crosshair"></div>
+      <div class="fs-scanline"></div>
+      <div class="fs-camera-overlay" id="fs-camera-overlay">
+        <div class="fs-overlay-text">// CAMERA REQUIRED //</div>
+        <div class="fs-overlay-sub">BIOMETRIC AUTHENTICATION NEEDS CAMERA ACCESS</div>
+        <button class="fs-start-btn" id="fs-start-btn" onclick="initFaceLock()">[ START CAMERA ]</button>
+        <div class="fs-overlay-hint">Click to allow camera access. Your face will be scanned for identity verification.</div>
+      </div>
+      <div class="fs-stage-label" id="fs-stage-label">AUTHENTICATING...</div>
+    </div>
+    <div class="fs-data-strip">
+      <div class="fs-data-cell"><span class="fs-dc-label">VERTICES</span><span class="fs-dc-value" id="fs-dv-verts">0</span></div>
+      <div class="fs-data-cell"><span class="fs-dc-label">STATUS</span><span class="fs-dc-value" id="fs-dv-depth">---</span></div>
+      <div class="fs-data-cell"><span class="fs-dc-label">LANDMARKS</span><span class="fs-dc-value" id="fs-dv-lm">0 / 68</span></div>
+      <div class="fs-data-cell"><span class="fs-dc-label">CONFIDENCE</span><span class="fs-dc-value" id="fs-dv-conf">0%</span></div>
+    </div>
+    <div class="fs-prog-wrap">
+      <span class="fs-prog-label">FACE_SCAN</span>
+      <div class="fs-prog-bar"><div class="fs-prog-fill" id="fs-prog-fill"></div></div>
+      <span class="fs-prog-pct" id="fs-prog-pct">0%</span>
+    </div>
+  </div>
+
+  <video id="camera-video" autoplay playsinline muted style="display:none"></video>
+</div>
+
+<!-- ===== AUTH ERROR MODAL (FACE FAILED → PASSWORD) ===== -->
+<div class="modal-overlay" id="auth-error-modal">
+  <div class="modal">
+    <div class="modal-title">// INTERFACE MISMATCH //</div>
+    <div class="auth-error-body">
+      <div class="auth-error-icon">⚠</div>
+      <div class="auth-error-text">BIOMETRIC SIGNATURE NOT RECOGNIZED.<br>YOUR FACE DOES NOT MATCH ANY REGISTERED PROFILE.</div>
+      <div class="auth-error-hint">// ENTER EMERGENCY ACCESS KEY //</div>
+      <input class="auth-password-input" id="auth-password-input" type="password" placeholder="ENTER ACCESS KEY" maxlength="20" autocomplete="off" />
+      <div class="auth-error-msg" id="auth-password-error" style="display:none"></div>
+      <button class="btn-primary" id="auth-password-btn">[ AUTHENTICATE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TRANSITION OVERLAY ===== -->
+<div id="transition-overlay">
+  <div class="transition-text" id="tr-text1">Accessing the Matrix...</div>
+  <div class="progress-bar-wrap"><div class="progress-bar-inner" id="tr-progress"></div></div>
+  <div id="tr-extra" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#003300;letter-spacing:2px;text-align:center;margin-top:8px;"></div>
+</div>
+
+<!-- ===== WHITE ROOM ===== -->
+<div id="white-room">
+  <div class="app">
+    <!-- LEFT — Agents -->
+    <div class="agents-panel">
+      <div class="panel-header">// <span>AGENTS</span> //</div>
+      <div class="agents-list" id="agentsList"></div>
+      <button class="add-agent-btn" id="add-agent-btn">NEW AGENT</button>
+      <button class="edit-agent-btn" id="edit-agent-btn">EDIT AGENT</button>
+    </div>
+
+    <!-- CENTER — Chat -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-header-name">ARCHITECT</div>
+          <div class="chat-header-role">// MATRIX CREATOR //</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-save" id="config-trigger-inline">[ API ]</button>
+          <button class="btn-save" id="save-btn">[ SAVE ]</button>
+          <button class="btn-save" id="log-toggle-btn">[ LOG ]</button>
+  <button class="btn-save" id="files-btn">[ FILES ]</button>
+  <button class="btn-save" id="usage-btn">[ USAGE ]</button>
+          <button class="btn-save" onclick="exportData()">[ EXPORT ]</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+          <button class="btn-save" onclick="document.getElementById('importFileInput').click()">[ IMPORT ]</button>
+        </div>
+      </div>
+
+      <div class="messages-area" id="messages-area">
+        <!-- filled by JS -->
+      </div>
+      <div class="empty-chat" id="emptyChat">
+        <span class="empty-chat-text">/ /   M A T R I X  / /</span>
+      </div>
+      <div class="chat-watermark" id="chatWatermark">/ /   M A T R I X  / /</div>
+
+      <div class="input-area">
+        <div class="input-wrap">
+          <div class="mention-dropdown" id="mention-dropdown"></div>
+          <div class="file-dropdown" id="file-dropdown"></div>
+          <textarea id="msg-input" placeholder="// ENTER MESSAGE //  (@ to mention, //file for workspace files)" rows="1"></textarea>
+        </div>
+        <button class="send-btn" id="send-btn">SEND ▶</button>
+      </div>
+    </div>
+
+    <!-- RIGHT — Sessions -->
+    <div class="sessions-panel">
+      <div class="panel-header">// <span>SESSIONS</span> //</div>
+      <div class="sessions-list" id="session-list"></div>
+    </div>
+  </div>
+
+  <canvas id="chat-bg" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
+
+  <div id="user-avatar-wrap" style="display:none"><div class="avatar-placeholder">?</div></div>
+  <span id="user-avatar-name" style="display:none">VISITOR_001</span>
+  <div id="save-status" style="display:none">SAVED</div>
+  <button id="load-btn" style="display:none"></button>
+  <button id="modal-close-btn" style="display:none"></button>
+
+  <div class="scanline"></div>
+  <div class="corner-deco tl"></div>
+  <div class="corner-deco tr"></div>
+  <div class="corner-deco bl"></div>
+  <div class="corner-deco br"></div>
+</div>
+
+<!-- ===== NEW AGENT MODAL ===== -->
+<div class="modal-overlay" id="newAgentModal">
+  <div class="modal">
+    <div class="modal-title">// CREATE NEW AGENT //</div>
+    <button class="modal-close-btn" onclick="closeModal('newAgentModal')">✕</button>
+    <div class="form-group">
+      <div class="form-label">Avatar</div>
+      <div class="avatar-upload-area" onclick="document.getElementById('agentAvatarInput').click()">
+        <img id="avatarPreviewImg" class="avatar-preview" src="" style="display:none">
+        <span class="avatar-placeholder-fs" id="avatarPlaceholder">◉</span>
+        <div class="avatar-hint">CLICK TO UPLOAD IMAGE</div>
+      </div>
+      <input type="file" id="agentAvatarInput" accept="image/*" style="display:none" onchange="previewAvatar(event)">
+    </div>
+    <div class="form-group">
+      <div class="form-label">Agent Name</div>
+      <input class="form-input" id="newAgentName" placeholder="e.g. ORACLE" maxlength="20">
+    </div>
+    <div class="form-group">
+      <div class="form-label">Identity / Role</div>
+      <input class="form-input" id="newAgentRole" placeholder="e.g. // DATA ANALYST //" maxlength="40">
+    </div>
+    <div class="form-group">
+      <div class="form-label">System Prompt</div>
+      <textarea class="form-textarea" id="newAgentPrompt" placeholder="Define this agent's personality, capabilities, and behavior..."></textarea>
+    </div>
+    <div class="form-group">
+      <div class="form-label">LLM CONFIG <span style="color:var(--green-dim);font-size:8px;letter-spacing:1px;">(BLANK = USE GLOBAL)</span></div>
+      <select class="form-input" id="agentLlmProvider">
+        <option value="">— Use Global Config —</option>
+        <option value="claude">Claude</option>
+        <option value="openai">OpenAI</option>
+        <option value="gemini">Gemini</option>
+        <option value="ollama">Ollama</option>
+        <option value="custom">Custom</option>
+      </select>
+      <input class="form-input" id="agentLlmModel" placeholder="Model override (e.g. gpt-4o-mini)" style="margin-top:4px;">
+      <input class="form-input" id="agentLlmKey" type="password" placeholder="API Key override (leave blank = use global)" style="margin-top:4px;">
+    </div>
+    <button class="btn-primary" id="create-agent-btn">[ INITIALIZE AGENT ]</button>
+    <button class="delete-agent-btn" id="delete-agent-btn" style="display:none">[ DELETE AGENT ]</button>
+    <input type="hidden" id="edit-agent-id" value="">
+    <div id="ai-avatar-area" style="display:none">
+      <img src="" id="ai-avatar-img" style="display:none" />
+      <div class="gen-loading" id="ai-loading" style="display:none;">
+        <div class="gen-loading-inner" style="font-size:7px;">...</div>
+      </div>
+      <div class="default-avatar" id="ai-avatar-ph" style="display:none;">▓</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== API CONFIG PANEL ===== -->
+<div id="config-panel">
+  <div class="config-modal">
+    <h2>// API CONFIG</h2>
+    <div class="config-subtitle">Configure provider & API keys — saved as profiles</div>
+
+    <div class="config-section">
+      <div class="config-section-title">LLM CHAT MODEL</div>
+      <div class="provider-tabs" id="llm-tabs">
+        <button class="ptab active" data-target="llm-claude">Claude</button>
+        <button class="ptab" data-target="llm-openai">OpenAI</button>
+        <button class="ptab" data-target="llm-gemini">Gemini</button>
+        <button class="ptab" data-target="llm-custom">Custom</button>
+        <button class="ptab" data-target="llm-ollama">Ollama</button>
+      </div>
+      <div class="provider-fields active" id="llm-claude">
+        <div class="config-field">
+          <span class="config-label">ANTHROPIC API KEY</span>
+          <input class="config-input" id="key-claude" type="password" placeholder="sk-ant-api03-..." />
+        </div>
+        <div class="config-note">Get Key: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> &nbsp; Model: claude-sonnet-4-20250514</div>
+      </div>
+      <div class="provider-fields" id="llm-openai">
+        <div class="config-field">
+          <span class="config-label">OPENAI API KEY</span>
+          <input class="config-input" id="key-openai" type="password" placeholder="sk-..." />
+        </div>
+        <div class="config-field">
+          <span class="config-label">MODEL</span>
+          <input class="config-input" id="model-openai" type="text" placeholder="gpt-4o" />
+        </div>
+        <div class="config-note">Get Key: <a href="https://platform.openai.com" target="_blank">platform.openai.com</a></div>
+      </div>
+      <div class="provider-fields" id="llm-gemini">
+        <div class="config-field">
+          <span class="config-label">GEMINI API KEY</span>
+          <input class="config-input" id="key-gemini" type="password" placeholder="AIzaSy..." />
+        </div>
+        <div class="config-note">Get Key: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a> &nbsp; Model: gemini-2.0-flash</div>
+      </div>
+      <div class="provider-fields" id="llm-custom">
+        <div class="config-field">
+          <span class="config-label">BASE URL</span>
+          <div class="config-url-select-wrap">
+            <div class="cs-wrap" id="cs-url">
+              <div class="cs-trigger" id="cs-url-trigger">-- Select preset --</div>
+              <div class="cs-options" id="cs-url-options">
+                <div class="cs-opt" data-value="">-- Select preset --</div>
+                <div class="cs-opt" data-value="https://api.deepseek.com">DeepSeek</div>
+                <div class="cs-opt" data-value="https://api.groq.com/openai/v1">Groq</div>
+                <div class="cs-opt" data-value="https://openrouter.ai/api/v1">OpenRouter</div>
+                <div class="cs-opt" data-value="https://api.together.xyz/v1">Together AI</div>
+                <div class="cs-opt" data-value="https://dashscope.aliyuncs.com/compatible-mode/v1">阿里云百炼</div>
+                <div class="cs-opt" data-value="https://api.siliconflow.cn/v1">SiliconFlow</div>
+                <div class="cs-opt" data-value="https://api.moonshot.cn/v1">Moonshot</div>
+                <div class="cs-opt" data-value="https://api.lingyiwanwu.com/v1">零一万物</div>
+                <div class="cs-opt" data-value="__custom__">Custom...</div>
+              </div>
+            </div>
+            <input class="config-input config-url-input" id="llm-custom-url" type="text" placeholder="https://api.groq.com/openai/v1" />
+          </div>
+        </div>
+        <div class="config-field">
+          <span class="config-label">API KEY</span>
+          <input class="config-input" id="llm-custom-key" type="password" placeholder="sk-..." />
+        </div>
+        <div class="config-field">
+          <span class="config-label">MODEL NAME</span>
+          <input class="config-input" id="llm-custom-model" type="text" placeholder="deepseek-chat / gemini-2.0-flash / ..." />
+        </div>
+      </div>
+      <div class="provider-fields" id="llm-ollama">
+        <div class="config-field">
+          <span class="config-label">OLLAMA URL</span>
+          <input class="config-input" id="ollama-url" type="text" placeholder="http://localhost:11434" />
+        </div>
+        <div class="config-field">
+          <span class="config-label">MODEL</span>
+          <div class="config-ollama-model-row" style="display:flex;align-items:stretch;gap:4px;">
+            <div class="cs-wrap" id="cs-ollama" style="flex:1;">
+              <div class="cs-trigger" id="cs-ollama-trigger">-- Select model --</div>
+              <div class="cs-options" id="cs-ollama-options">
+                <div class="cs-opt" data-value="">-- Select model --</div>
+              </div>
+            </div>
+            <button class="matrix-btn" id="ollama-detect-btn" style="font-size:8px;padding:3px 8px;">[ DETECT ]</button>
+          </div>
+          <input class="config-input" id="ollama-model" type="text" placeholder="Enter model name manually" style="margin-top:4px;" />
+        </div>
+        <div class="config-note">Ollama must be running. <a href="#" id="ollama-detect-link">Detect local models</a></div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <div class="config-section-title">PERFORMANCE</div>
+      <div class="config-field">
+        <span class="config-label">MAX CONCURRENCY</span>
+        <input class="config-input" id="llm-max-concurrency" type="number" min="1" max="20" value="1" style="width:80px;" />
+        <span style="color:#0a0;font-size:9px;margin-left:6px;">Set >1 for high-concurrency APIs</span>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <div class="config-section-title">WEB SEARCH</div>
+      <div class="config-note" style="margin-top:6px;">Google Custom Search API — <a href="https://programmablesearchengine.google.com/" target="_blank">创建搜索引擘获取 CX</a></div>
+      <div class="config-field">
+        <span class="config-label">GOOGLE API KEY</span>
+        <input class="config-input" id="key-google-search" type="password" placeholder="AIzaSy..." />
+      </div>
+      <div class="config-field">
+        <span class="config-label">SEARCH ENGINE ID (CX)</span>
+        <input class="config-input" id="key-google-cx" type="text" placeholder="e.g. 8ac1ab64606d234f1" />
+      </div>
+    </div>
+
+    <div class="config-status" id="config-status"></div>
+
+    <div class="config-footer">
+      <button class="matrix-btn" id="config-test-btn" style="font-size:10px;padding:8px 20px">[ TEST ]</button>
+      <button class="matrix-btn" id="config-save-btn" style="font-size:10px;padding:8px 20px">[ SAVE ]</button>
+      <button class="matrix-btn" id="config-close-btn" style="font-size:10px;padding:8px 20px">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SAVED SESSIONS PANEL ===== -->
+<div id="saved-panel">
+  <div class="saved-modal">
+    <h3>SAVED SESSIONS</h3>
+    <div id="saved-list"></div>
+    <button class="modal-close" onclick="document.getElementById('saved-panel').classList.remove('active')">[ CLOSE ]</button>
+  </div>
+</div>
+
+<!-- ===== OPERATION HISTORY PANEL ===== -->
+<div id="history-panel">
+  <div class="hist-modal">
+    <div class="hist-hdr">
+      <h3>// OPERATION LOG & CHECKPOINTS //</h3>
+      <button class="modal-close" onclick="document.getElementById('history-panel').classList.remove('active')">[ CLOSE ]</button>
+    </div>
+    <div class="hist-tabs">
+      <button class="hist-tab active" data-tab="operations">OPERATIONS</button>
+      <button class="hist-tab" data-tab="snapshots">CHECKPOINTS</button>
+    </div>
+    <div class="hist-content" id="hist-operations">
+      <div class="hist-filter">
+        <input class="hist-search" id="hist-search" placeholder="Filter by agent, tool, or file..." />
+        <button class="hist-refresh" id="hist-refresh">⟳</button>
+      </div>
+      <div id="hist-list"></div>
+    </div>
+    <div class="hist-content" id="hist-snapshots" style="display:none">
+      <div class="hist-snap-actions">
+        <button class="btn-save" id="snap-manual-btn">[ SAVE CHECKPOINT ]</button>
+        <button class="btn-save" id="snap-refresh-btn">[ REFRESH ]</button>
+      </div>
+      <div id="snap-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FILE BROWSER PANEL ===== -->
+<div id="file-browser-panel">
+  <div class="fb-modal">
+    <div class="fb-hdr">
+      <h3>// FILE BROWSER & WHITELIST //</h3>
+      <button class="modal-close" onclick="document.getElementById('file-browser-panel').classList.remove('active')">[ CLOSE ]</button>
+    </div>
+    <div class="fb-body">
+      <div class="fb-left">
+        <div class="fb-section-title">WHITELIST</div>
+        <div class="fb-whitelist" id="fb-whitelist">
+          <div class="fb-empty">No paths whitelisted.<br>Browse and add files below.</div>
+        </div>
+        <div class="fb-section-title">BROWSE</div>
+        <div class="fb-browse-bar">
+          <input class="fb-path-input" id="fb-path-input" value="C:\" placeholder="Enter path..." />
+          <button class="fb-go-btn" id="fb-go-btn">[ GO ]</button>
+        </div>
+        <div class="fb-dir-contents" id="fb-dir-contents"></div>
+      </div>
+      <div class="fb-right">
+        <div class="fb-section-title">SEARCH FILENAMES</div>
+        <div class="fb-search-bar">
+          <input class="fb-search-input" id="fb-search-input" placeholder="Search files in current dir..." />
+        </div>
+        <div class="fb-search-results" id="fb-search-results">
+          <div class="fb-empty">Browse to a directory, then search filenames here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOKEN USAGE PANEL ===== -->
+<div id="usage-panel">
+  <div class="usage-modal">
+    <div class="usage-hdr">
+      <h3>// TOKEN USAGE //</h3>
+      <button class="modal-close" onclick="closeUsagePanel()">[ CLOSE ]</button>
+    </div>
+    <div class="usage-body" id="usage-body"></div>
+  </div>
+</div>
+
+<script src="js/matrix-rain.js"></script>
+<script src="js/loading.js"></script>
+<script src="js/face-scan.js"></script>
+<script src="js/transition.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/session-model.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/history.js"></script>
+<script src="js/architecture.js"></script>
+<script src="js/agent-memory.js"></script>
+<script src="js/api.js"></script>
+<script src="js/config-ui.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/agent.js"></script>
+<!-- ===== CONFIRM MODAL (Matrix themed) ===== -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title">// CONFIRM //</div>
+    <div class="confirm-body" id="confirm-body">Are you sure?</div>
+    <div class="confirm-actions">
+      <button class="modal-close" id="confirm-yes" style="margin:0;float:none;">[ YES ]</button>
+      <button class="modal-close" id="confirm-no" style="margin:0;float:none;margin-left:16px;">[ NO ]</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/session.js"></script>
+<script src="js/file-browser.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
