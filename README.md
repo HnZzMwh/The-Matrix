@@ -102,9 +102,7 @@ MATRIX/
 │   ├── memory.py         # RAG 向量存储
 │   ├── tools.py          # 工具注册与执行
 │   └── requirements.txt  # Python 依赖
-├── tests/                # 测试
-├── docs/                 # 设计文档
-└── END/credits.html      # 彩蛋鸣谢页
+└── docs/                 # 设计文档
 ```
 
 ### License
@@ -200,9 +198,7 @@ MATRIX/
 │   ├── memory.py         # RAG vector store
 │   ├── tools.py          # Tool registry & execution
 │   └── requirements.txt  # Python dependencies
-├── tests/                # Tests
-├── docs/                 # Design docs
-└── END/credits.html      # Easter egg credits
+└── docs/                 # Design docs
 ```
 
 ### License
@@ -298,9 +294,7 @@ MATRIX/
 │   ├── memory.py         # RAG ベクトルストア
 │   ├── tools.py          # ツール登録 & 実行
 │   └── requirements.txt  # Python 依存関係
-├── tests/                # テスト
-├── docs/                 # 設計ドキュメント
-└── END/credits.html      # イースターエッグ クレジット
+└──docs/                 # 設計ドキュメント
 ```
 
 ### ライセンス
