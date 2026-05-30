@@ -1,6 +1,5 @@
 ﻿<div align="center">
 
-<img src="screenshot.png" width="120" style="display:none" onerror="this.style.display='none'">
 
 # M A T R I X
 
