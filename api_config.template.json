@@ -1,0 +1,15 @@
+﻿{
+  "llmProvider": "ollama",
+  "claudeKey": "",
+  "openaiKey": "",
+  "openaiModel": "gpt-4o",
+  "ollamaUrl": "http://localhost:11434",
+  "ollamaModel": "qwen2.5:7b-instruct",
+  "geminiKey": "",
+  "llmCustomUrl": "",
+  "llmCustomKey": "",
+  "llmCustomModel": "",
+  "googleSearchKey": "",
+  "googleSearchCx": "",
+  "llmMaxConcurrency": 1
+}
