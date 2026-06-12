@@ -71,7 +71,6 @@ cp renderer/data/api_config.template.json renderer/data/api_config.json
 cp renderer/data/api_profiles.template.json renderer/data/api_profiles.json
 ```
 
-然后编辑填入你的 API Key。**切勿提交含真实 Key 的配置文件！**（已通过 `.gitignore` 保护）
 
 ### 项目结构
 
@@ -167,8 +166,6 @@ cp renderer/data/api_config.template.json renderer/data/api_config.json
 cp renderer/data/api_profiles.template.json renderer/data/api_profiles.json
 ```
 
-Then edit them with your API keys. **Never commit real API keys!** (Protected by `.gitignore`)
-
 ### Project Structure
 
 ```
@@ -263,7 +260,6 @@ cp renderer/data/api_config.template.json renderer/data/api_config.json
 cp renderer/data/api_profiles.template.json renderer/data/api_profiles.json
 ```
 
-その後 API キーを編集して入力してください。**実際の API キーをコミットしないでください！**（`.gitignore` で保護済み）
 
 ### プロジェクト構造
 
