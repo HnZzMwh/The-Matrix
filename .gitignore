@@ -1,0 +1,36 @@
+﻿# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build output
+dist/
+out/
+
+# Sensitive API keys & user data
+renderer/data/api_config.json
+renderer/data/api_profiles.json
+renderer/data/current_session.json
+renderer/data/sessions.json
+renderer/data/token_usage.json
+renderer/data/face_print.json
+renderer/data/file_whitelist.json
+
+# Chat history (user data)
+renderer/data/chat/
+renderer/data/chat_history/
+renderer/data/snapshots/
+
+# Backups (user data)
+data/
+
+# System / IDE
+.codebuddy/
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

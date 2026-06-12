@@ -74,3 +74,16 @@ test('migrateLegacyRuntimeChats folds per-agent chat blobs into one session', ()
   assert.equal(migrated.lastActiveAgentId, 'architect');
   assert.equal(migrated.agents.debugger.messages[0].text, 'b');
 });
+
+test('normalizeSavedSession backfills metadata on new-format sessions', () => {
+  const session = normalizeSavedSession({
+    id: 'sess_keep_active',
+    title: 'X',
+    savedAt: 20,
+    agents: {
+      debugger: { agentId: 'debugger', agentName: 'DEBUGGER', messages: [{ time: 20, text: 'ok' }] },
+    },
+  });
+  assert.equal(session.lastActiveAgentId, null);
+  assert.equal(session.dirty, false);
+});

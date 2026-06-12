@@ -1,0 +1,6 @@
+{
+  "name": "memory",
+  "version": "1.0.0",
+  "description": "Persistent hierarchical memory system — save, search, update, and organize memories",
+  "requires": ["fs_read", "fs_write", "run_command"]
+}

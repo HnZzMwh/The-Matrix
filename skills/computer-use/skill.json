@@ -1,0 +1,10 @@
+{
+  "name": "computer-use",
+  "version": "1.0.0",
+  "description": "Desktop GUI control — screenshot, mouse, keyboard automation via computer-use-mcp",
+  "requires": [],
+  "mcp": {
+    "server": "computer-use-mcp",
+    "tool": "computer"
+  }
+}

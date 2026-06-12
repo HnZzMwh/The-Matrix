@@ -11,7 +11,8 @@
 
 
 
-![MATRIX Screenshot](screenshot.png)
+<!-- Screenshot: capture the running app and place it as renderer/assets/screenshot.png -->
+<!-- ![MATRIX Screenshot](renderer/assets/screenshot.png) -->
 
 > *Replace `screenshot.png` with an actual screenshot of the running app.*
 

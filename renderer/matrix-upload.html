@@ -6,16 +6,13 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com; connect-src 'self' http://localhost:* https: ws: wss:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:; worker-src 'self' blob:; media-src 'self' blob: data:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://fonts.googleapis.com https://fonts.gstatic.com https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com; connect-src 'self' http://localhost:* https: ws: wss:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:;">
 <title>MATRIX // CONSCIOUSNESS ACCESS PROTOCOL v2.0</title>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="css/style.css">
 <!-- Electron localStorage → IPC bridge -->
 <script>
 (function(){if(typeof window.electronAPI==='undefined')return;
-var ea=window.electronAPI,km={'matrix_agents_v2':'agents','matrix_sessions_v2':'sessions','matrix_api_config':'api_config','matrix_file_whitelist':'file_whitelist','matrix_face_print':'face_print','matrix_arch_memory':'architecture','matrix_api_profiles':'api_profiles','matrix_token_usage':'token_usage'};
+var ea=window.electronAPI,km={'matrix_agents_v2':'agents','matrix_sessions_v2':'sessions','matrix_api_config':'api_config','matrix_arch_memory':'architecture','matrix_api_profiles':'api_profiles','matrix_token_usage':'token_usage'};
 // Synchronous cache from preload (avoids data loss on reload)
 var cache=(ea.storeCache||{});
 for(var k in km){var v=cache[km[k]];if(v!==undefined)cache[k]=v;}
@@ -41,7 +38,7 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
 <canvas id="rain-canvas"></canvas>
 
 <!-- ===== LOADING / BOOT SCREEN ===== -->
-<div id="loading-screen">
+<div id="loading-screen" style="display:none">
   <div class="glitch-window" id="win1">
     <div class="win-header">SYS://CORTEX_BRIDGE_INIT</div>
     <div class="win-content" id="wc1"></div>
@@ -66,61 +63,26 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
   </div>
 </div>
 
-<!-- ===== CAMERA / FACE LOCK SCREEN ===== -->
+<!-- ===== PASSWORD LOGIN SCREEN ===== -->
 <div id="upload-screen">
-  <div class="upload-title glitch-text" data-text="FACE LOCK PROTOCOL">FACE LOCK PROTOCOL</div>
-  <div class="upload-subtitle">// BIOMETRIC_AUTH // FEATURE_SCAN // MATRIX_ENTRY //</div>
+  <div class="upload-title glitch-text" data-text="MATRIX ACCESS">MATRIX ACCESS</div>
+  <div class="upload-subtitle">// SYSTEM_AUTH // SECURE_ENTRY // IDENTITY_VERIFICATION //</div>
 
-  <div id="face-scan-container">
-    <div class="fs-hdr">
-      <span class="fs-hdr-title">SYS://BIOMETRIC_ID_v4.1</span>
-      <span class="fs-hdr-status" id="fs-hdr-status"><span class="blink">▌</span> AUTHENTICATING</span>
-    </div>
-    <div class="fs-frame" id="fs-frame">
-      <canvas id="fs-bg"></canvas>
-      <canvas id="fs-main"></canvas>
-      <canvas id="fs-fx"></canvas>
-      <div class="fs-corner tl"></div>
-      <div class="fs-corner tr"></div>
-      <div class="fs-corner bl"></div>
-      <div class="fs-corner br"></div>
-      <div class="fs-crosshair"></div>
-      <div class="fs-scanline"></div>
-      <div class="fs-camera-overlay" id="fs-camera-overlay">
-        <div class="fs-overlay-text">// CAMERA REQUIRED //</div>
-        <div class="fs-overlay-sub">BIOMETRIC AUTHENTICATION NEEDS CAMERA ACCESS</div>
-        <button class="fs-start-btn" id="fs-start-btn" onclick="initFaceLock()">[ START CAMERA ]</button>
-        <div class="fs-overlay-hint">Click to allow camera access. Your face will be scanned for identity verification.</div>
+  <div id="password-login-container">
+    <div class="pw-login-frame">
+      <div class="pw-login-hdr">
+        <span class="pw-login-hdr-title">SYS://AUTHENTICATION_v2.0</span>
+        <span class="pw-login-hdr-status" id="pw-login-status"><span class="blink">▌</span> STANDBY</span>
       </div>
-      <div class="fs-stage-label" id="fs-stage-label">AUTHENTICATING...</div>
-    </div>
-    <div class="fs-data-strip">
-      <div class="fs-data-cell"><span class="fs-dc-label">VERTICES</span><span class="fs-dc-value" id="fs-dv-verts">0</span></div>
-      <div class="fs-data-cell"><span class="fs-dc-label">STATUS</span><span class="fs-dc-value" id="fs-dv-depth">---</span></div>
-      <div class="fs-data-cell"><span class="fs-dc-label">LANDMARKS</span><span class="fs-dc-value" id="fs-dv-lm">0 / 68</span></div>
-      <div class="fs-data-cell"><span class="fs-dc-label">CONFIDENCE</span><span class="fs-dc-value" id="fs-dv-conf">0%</span></div>
-    </div>
-    <div class="fs-prog-wrap">
-      <span class="fs-prog-label">FACE_SCAN</span>
-      <div class="fs-prog-bar"><div class="fs-prog-fill" id="fs-prog-fill"></div></div>
-      <span class="fs-prog-pct" id="fs-prog-pct">0%</span>
-    </div>
-  </div>
-
-  <video id="camera-video" autoplay playsinline muted style="display:none"></video>
-</div>
-
-<!-- ===== AUTH ERROR MODAL (FACE FAILED → PASSWORD) ===== -->
-<div class="modal-overlay" id="auth-error-modal">
-  <div class="modal">
-    <div class="modal-title">// INTERFACE MISMATCH //</div>
-    <div class="auth-error-body">
-      <div class="auth-error-icon">⚠</div>
-      <div class="auth-error-text">BIOMETRIC SIGNATURE NOT RECOGNIZED.<br>YOUR FACE DOES NOT MATCH ANY REGISTERED PROFILE.</div>
-      <div class="auth-error-hint">// ENTER EMERGENCY ACCESS KEY //</div>
-      <input class="auth-password-input" id="auth-password-input" type="password" placeholder="ENTER ACCESS KEY" maxlength="20" autocomplete="off" />
-      <div class="auth-error-msg" id="auth-password-error" style="display:none"></div>
-      <button class="btn-primary" id="auth-password-btn">[ AUTHENTICATE ]</button>
+      <div class="pw-login-body">
+        <div class="pw-login-text" id="pw-login-text">ENTER ACCESS KEY TO PROCEED</div>
+        <div class="pw-login-hint" id="pw-login-hint">// SYSTEM LOCKED // ACCESS RESTRICTED //</div>
+        <div class="pw-login-input-wrap">
+          <input class="pw-login-input" id="pw-login-input" type="password" placeholder="ENTER ACCESS KEY" maxlength="20" autocomplete="off" />
+          <div class="pw-login-error" id="pw-login-error" style="display:none"></div>
+        </div>
+        <button class="pw-login-btn" id="pw-login-btn">[ AUTHENTICATE ]</button>
+      </div>
     </div>
   </div>
 </div>
@@ -130,6 +92,31 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
   <div class="transition-text" id="tr-text1">Accessing the Matrix...</div>
   <div class="progress-bar-wrap"><div class="progress-bar-inner" id="tr-progress"></div></div>
   <div id="tr-extra" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:#003300;letter-spacing:2px;text-align:center;margin-top:8px;"></div>
+</div>
+
+<!-- ===== SESSION WIZARD MODAL ===== -->
+<div id="session-wizard">
+  <div class="sw-modal">
+    <div class="sw-hdr">
+      <h3>// NEW SESSION //</h3>
+      <button class="modal-close" id="sw-close-btn">[ CLOSE ]</button>
+    </div>
+    <div class="sw-body">
+      <div class="sw-left">
+        <div class="sw-section-title">BROWSE FILESYSTEM</div>
+        <div class="sw-browse-bar">
+          <input class="sw-path-input" id="sw-path-input" value="C:\" placeholder="Enter path..." />
+          <button class="sw-go-btn" id="sw-go-btn">[ GO ]</button>
+        </div>
+        <div class="sw-dir-contents" id="sw-dir-contents"></div>
+      </div>
+      <div class="sw-right"></div>
+    </div>
+    <div class="sw-selected" id="sw-selected" style="display:none">
+      <span>SELECTED: </span><span class="sw-selected-path" id="sw-selected-path"></span>
+      <button class="sw-confirm-btn" id="sw-confirm-btn">[ START WORKSPACE SESSION ]</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== WHITE ROOM ===== -->
@@ -152,17 +139,104 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
         </div>
         <div class="header-actions">
           <button class="btn-save" id="config-trigger-inline">[ API ]</button>
-          <button class="btn-save" id="save-btn">[ SAVE ]</button>
+          <button class="btn-save" id="tools-trigger">[ TOOLS ]</button>
+          <button class="btn-save" id="github-toggle">[ GITHUB ]</button>
           <button class="btn-save" id="log-toggle-btn">[ LOG ]</button>
-  <button class="btn-save" id="files-btn">[ FILES ]</button>
-  <button class="btn-save" id="usage-btn">[ USAGE ]</button>
-          <button class="btn-save" onclick="exportData()">[ EXPORT ]</button>
-          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
-          <button class="btn-save" onclick="document.getElementById('importFileInput').click()">[ IMPORT ]</button>
+          <button class="btn-save" id="usage-btn">[ USAGE ]</button>
+          <button class="btn-save" id="sessions-toggle">[ SESSIONS ]</button>
+          <button class="btn-save" id="mode-toggle-btn" title="Toggle code mode">[ CHAT ]</button>
         </div>
       </div>
 
-      <div class="messages-area" id="messages-area">
+      <!-- TOOLS & SKILLS PANEL (SIDE DRAWER) -->
+      <div id="tools-panel" class="tools-panel-collapsed">
+        <div class="ts-drawer">
+          <div class="ts-header">
+            <span class="ts-title">// AGENT TOOLS & SKILLS //</span>
+            <button class="ts-close-btn" id="close-tools-btn">[ CLOSE ]</button>
+          </div>
+          <div class="ts-tabs">
+            <button class="ts-tab active" data-tab="installed">INSTALLED</button>
+            <button class="ts-tab" data-tab="github">GITHUB</button>
+            <button class="ts-tab" data-tab="mcp">MCP</button>
+            <button class="ts-tab" data-tab="import">IMPORT</button>
+          </div>
+          <div class="ts-body">
+            <!-- TAB: INSTALLED -->
+            <div class="ts-tab-content active" id="ts-tab-installed">
+              <div class="ts-summary" id="ts-summary"></div>
+              <div class="ts-plugin-list" id="ts-plugin-list"></div>
+            </div>
+            <!-- TAB: GITHUB -->
+            <div class="ts-tab-content" id="ts-tab-github">
+              <div class="ts-section-title">// INSTALL FROM GITHUB //</div>
+              <div class="ts-gh-search">
+                <input class="ts-gh-input" id="ts-gh-input" placeholder="owner/repo" />
+                <button class="ts-gh-btn" id="ts-gh-fetch-btn">[ FETCH ]</button>
+              </div>
+              <div class="ts-empty" style="margin-top:20px">Enter a GitHub repo (e.g. <code>user/my-skill</code>) to discover installable skills.</div>
+              <div class="ts-gh-result" id="ts-gh-result" style="display:none"></div>
+            </div>
+            <!-- TAB: MCP -->
+            <div class="ts-tab-content" id="ts-tab-mcp">
+              <div class="ts-section-title">// SAVED SERVERS //</div>
+              <div class="ts-mcp-servers" id="ts-mcp-servers">
+                <div class="ts-empty">No MCP servers configured.<br>MCP servers provide external tools via stdio IPC.<br>Add one below — it will auto-start on next launch.</div>
+              </div>
+              <div class="ts-section-title" style="margin-top:16px">// ADD NEW //</div>
+              <div class="ts-mcp-add">
+                <input class="ts-mcp-input" id="ts-mcp-name" placeholder="Server name" />
+                <input class="ts-mcp-input" id="ts-mcp-cmd" placeholder="Command (e.g. node E:\\path\\to\\main.js)" />
+                <button class="ts-mcp-btn" id="ts-mcp-add-btn">[ ADD ]</button>
+              </div>
+            </div>
+            <!-- TAB: IMPORT -->
+            <div class="ts-tab-content" id="ts-tab-import">
+              <div class="ts-section-title">// IMPORT FROM MARKDOWN //</div>
+              <div class="ts-drop-zone" id="tools-drop-zone">
+                <div class="drop-hint">DRAG & DROP .md SKILL FILES HERE</div>
+              </div>
+              <button class="ts-import-btn" id="import-md-btn">[ SELECT FILE ]</button>
+              <input type="file" id="mdImportInput" accept=".md" style="display:none">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <!-- ===== GITHUB PANEL (SIDE DRAWER) ===== -->
+    <div id="github-panel" class="github-panel-collapsed">
+      <div class="gh-drawer">
+        <div class="gh-header">
+          <span class="gh-title">// GITHUB //</span>
+          <button class="gh-close-btn" id="close-github-btn">[ CLOSE ]</button>
+        </div>
+        <div class="gh-split-body">
+          <!-- LEFT: MY REPOS -->
+          <div class="gh-split-col">
+            <div class="gh-col-hdr">MY REPOS</div>
+            <div class="gh-search-bar">
+              <input class="gh-search" id="gh-repo-search" placeholder="Filter..." />
+            </div>
+            <div class="gh-list" id="gh-repo-list">
+              <div class="gh-empty">Configure GitHub token in [API] panel</div>
+            </div>
+          </div>
+          <!-- RIGHT: STARRED -->
+          <div class="gh-split-col">
+            <div class="gh-col-hdr">STARRED</div>
+            <div class="gh-search-bar">
+              <input class="gh-search" id="gh-starred-search" placeholder="Filter..." />
+              <button class="gh-refresh-btn" id="gh-starred-refresh">⟳</button>
+            </div>
+            <div class="gh-list" id="gh-starred-list">
+              <div class="gh-empty">Configure GitHub token in [API] panel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="messages-area" id="messages-area">
         <!-- filled by JS -->
       </div>
       <div class="empty-chat" id="emptyChat">
@@ -174,15 +248,17 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
         <div class="input-wrap">
           <div class="mention-dropdown" id="mention-dropdown"></div>
           <div class="file-dropdown" id="file-dropdown"></div>
-          <textarea id="msg-input" placeholder="// ENTER MESSAGE //  (@ to mention, //file for workspace files)" rows="1"></textarea>
+          <div class="attach-preview" id="attach-preview"></div>
+          <textarea id="msg-input" placeholder="//file for workspace  |  @ to mention  |  // attach files" rows="1"></textarea>
         </div>
+        <input type="file" id="file-upload-input" name="files" multiple style="display:none" />
         <button class="send-btn" id="send-btn">SEND ▶</button>
       </div>
     </div>
 
     <!-- RIGHT — Sessions -->
     <div class="sessions-panel">
-      <div class="panel-header">// <span>SESSIONS</span> //</div>
+      <div class="panel-header">// <span id="sessions-panel-title">SESSIONS</span> //</div>
       <div class="sessions-list" id="session-list"></div>
     </div>
   </div>
@@ -191,7 +267,6 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
 
   <div id="user-avatar-wrap" style="display:none"><div class="avatar-placeholder">?</div></div>
   <span id="user-avatar-name" style="display:none">VISITOR_001</span>
-  <div id="save-status" style="display:none">SAVED</div>
   <button id="load-btn" style="display:none"></button>
   <button id="modal-close-btn" style="display:none"></button>
 
@@ -360,15 +435,16 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
     </div>
 
     <div class="config-section">
-      <div class="config-section-title">WEB SEARCH</div>
-      <div class="config-note" style="margin-top:6px;">Google Custom Search API — <a href="https://programmablesearchengine.google.com/" target="_blank">创建搜索引擘获取 CX</a></div>
+      <div class="config-section-title">// GITHUB INTEGRATION //</div>
       <div class="config-field">
-        <span class="config-label">GOOGLE API KEY</span>
-        <input class="config-input" id="key-google-search" type="password" placeholder="AIzaSy..." />
+        <span class="config-label">PERSONAL TOKEN</span>
+        <input class="config-input" id="key-github-token" type="password" placeholder="ghp_xxxxxxxxxxxx" style="width:280px;" />
       </div>
-      <div class="config-field">
-        <span class="config-label">SEARCH ENGINE ID (CX)</span>
-        <input class="config-input" id="key-google-cx" type="text" placeholder="e.g. 8ac1ab64606d234f1" />
+      <div class="config-note">Create at <a href="#" onclick="event.preventDefault(); window.open('https://github.com/settings/tokens', '_blank')">github.com/settings/tokens</a> — need repo, user:email scopes</div>
+      <div class="config-field" style="margin-top:8px;align-items:center;">
+        <span class="config-label">STATUS</span>
+        <span id="github-token-status" style="color:var(--text-dim);font-size:10px;">Not configured</span>
+        <button class="btn-save" id="github-verify-btn" style="font-size:9px;padding:3px 10px;margin-left:8px;">[ VERIFY ]</button>
       </div>
     </div>
 
@@ -464,18 +540,33 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
 </div>
 
 <script src="js/matrix-rain.js"></script>
-<script src="js/loading.js"></script>
-<script src="js/face-scan.js"></script>
+<!-- loading.js removed: fast-boot inline script handles boot sequence -->
+<script src="js/password-login.js"></script>
 <script src="js/transition.js"></script>
+<script src="js/plugin-manager.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/session-model.js"></script>
 <script src="js/tools.js"></script>
+<script src="js/plugins/filesystem-plugin.js"></script>
+<script src="js/plugins/dev-plugin.js"></script>
+<script src="js/plugins/architecture-plugin.js"></script>
+<script src="js/plugins/system-plugin.js"></script>
+<script src="js/plugin-ui.js"></script>
+<script src="js/skill-registry.js"></script>
+<script src="js/skill-router.js"></script>
+<script src="js/prompt-guard.js"></script>
+<script src="js/tool-guard.js"></script>
+<script src="js/guardrails.js"></script>
+<script src="js/file-upload.js"></script>
 <script src="js/history.js"></script>
 <script src="js/architecture.js"></script>
 <script src="js/agent-memory.js"></script>
 <script src="js/api.js"></script>
 <script src="js/config-ui.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/github-integration.js"></script>
+<script src="js/plugins/github-plugin.js"></script>
+<script src="js/github-panel.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/agent.js"></script>
 <!-- ===== CONFIRM MODAL (Matrix themed) ===== -->
@@ -491,7 +582,43 @@ Storage.prototype.removeItem=function(k){delete cache[k];if(km[k])ea.store.remov
 </div>
 
 <script src="js/session.js"></script>
+<script src="js/session-wizard.js"></script>
 <script src="js/file-browser.js"></script>
 <script src="js/app.js"></script>
+<script>
+  // ── FAST BOOT: Skip loading animation & password, go straight to chat ──
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('loading-screen').style.display = 'none';
+    var upload = document.getElementById('upload-screen');
+    if (upload) upload.style.display = 'none';
+    setTimeout(function() { enterWhiteRoom(); }, 100);
+  });
+
+  // ── Mode toggle button handler ──
+  document.addEventListener('DOMContentLoaded', function() {
+    var modeBtn = document.getElementById('mode-toggle-btn');
+    if (modeBtn) {
+      modeBtn.addEventListener('click', function() {
+        if (typeof toggleSessionMode === 'function') toggleSessionMode();
+        if (typeof getCurrentMode === 'function') {
+          var m = getCurrentMode();
+          modeBtn.textContent = '[' + (m === 'code' ? 'CODE' : 'CHAT') + ']';
+          // Update sessions panel title
+          var panelTitle = document.getElementById('sessions-panel-title');
+          if (panelTitle) panelTitle.textContent = m === 'code' ? 'SESSIONS' : 'CHAT HISTORY';
+        }
+      });
+      // Set initial button text when session loads
+      setTimeout(function() {
+        if (typeof getCurrentMode === 'function') {
+          var m0 = getCurrentMode();
+          modeBtn.textContent = '[' + (m0 === 'code' ? 'CODE' : 'CHAT') + ']';
+          var panelTitle0 = document.getElementById('sessions-panel-title');
+          if (panelTitle0) panelTitle0.textContent = m0 === 'code' ? 'SESSIONS' : 'CHAT HISTORY';
+        }
+      }, 500);
+    }
+  });
+</script>
 </body>
 </html>

@@ -6,6 +6,7 @@ function createEmptySession({ id, currentAgentId, now = Date.now() }) {
     savedAt: 0,
     lastActiveAgentId: currentAgentId || null,
     dirty: false,
+    mode: 'chat',
     agents: {},
   };
 }
@@ -45,6 +46,70 @@ function shouldAutoSaveSession(session) {
   return Boolean(session && session.dirty && !isSessionEmpty(session));
 }
 
+/**
+ * Fire-and-forget: ask LLM to generate a concise session title.
+ * Updates currentSession.title and persists to disk if successful.
+ */
+// Throttle to prevent duplicate concurrent title generation calls
+let _titleGenPending = false;
+
+function generateSessionTitle(userMessage, agentId) {
+  if (!userMessage) return null;
+  if (_titleGenPending) return _titleGenPending; // skip if already pending
+
+  // Fallback: derive title from message text without LLM
+  const fallbackTitle = deriveSessionTitle(userMessage);
+
+  if (typeof callLLM !== 'function') {
+    applyTitle(fallbackTitle);
+    return fallbackTitle;
+  }
+
+  const titlePrompt = 'You are a title generator. Based on the user\'s first message below, generate a CONCISE session title (maximum 5 words, English only). Output ONLY the title, no quotes, no punctuation, no explanation.\n\nUser message:';
+  const messages = [{ role: 'user', content: titlePrompt + ' "' + String(userMessage).slice(0, 300) + '"' }];
+
+  _titleGenPending = (async () => {
+    try {
+      const title = await callLLM(messages, 'Generate a concise session title (5 words max).', agentId);
+      if (!title) { applyTitle(fallbackTitle); return fallbackTitle; }
+      // Clean up: remove quotes, newlines, extra spaces
+      let clean = String(title).replace(/["'\n\r]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+      if (clean.length > 35) clean = clean.slice(0, 35);
+      if (!clean || clean.length < 2) { applyTitle(fallbackTitle); return fallbackTitle; }
+
+      applyTitle(clean);
+      console.log('[Session] Title generated:', clean);
+      return clean;
+    } catch (e) {
+      console.warn('[Session] Title generation failed:', e.message);
+      applyTitle(fallbackTitle);
+      return fallbackTitle;
+    } finally {
+      _titleGenPending = false;
+    }
+  })();
+
+  return _titleGenPending;
+}
+
+async function applyTitle(clean) {
+  const session = (typeof getCurrentSession === 'function') ? getCurrentSession() : null;
+  if (session) {
+    session.title = clean;
+    session.dirty = true;
+  }
+
+  // Persist to saved sessions list
+  if (typeof maybeAutoSaveCurrentSession === 'function') {
+    try { await maybeAutoSaveCurrentSession(); } catch {}
+  }
+
+  // Update UI
+  if (typeof renderSessionsRight === 'function') {
+    try { renderSessionsRight(); } catch {}
+  }
+}
+
 function normalizeSavedSession(record) {
   if (!record) return null;
   if (record.agents) {
@@ -52,6 +117,7 @@ function normalizeSavedSession(record) {
       ...record,
       dirty: Boolean(record.dirty),
       lastActiveAgentId: record.lastActiveAgentId || null,
+      mode: record.mode || 'chat',
     };
   }
 
@@ -60,6 +126,7 @@ function normalizeSavedSession(record) {
     currentAgentId: record.agentId || null,
     now: record.savedAt || Date.now(),
   });
+  session.mode = 'chat';
   session.title = record.title || session.title;
   session.savedAt = record.savedAt || 0;
 
@@ -104,9 +171,13 @@ const api = {
   getLatestSessionTimestamp,
   isSessionEmpty,
   shouldAutoSaveSession,
+  generateSessionTitle,
   normalizeSavedSession,
   migrateLegacyRuntimeChats,
 };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = api;
-if (typeof window !== 'undefined') window.SessionModel = api;
+if (typeof window !== 'undefined') {
+  // Guard against re-assignment if script is loaded multiple times
+  if (!window.SessionModel) window.SessionModel = api;
+}

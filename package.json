@@ -41,7 +41,5 @@
     "electron": "^29.0.0",
     "electron-builder": "^24.0.0"
   },
-  "dependencies": {
-    "level": "^10.0.0"
-  }
+  "dependencies": {}
 }
